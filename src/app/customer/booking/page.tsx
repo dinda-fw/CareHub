@@ -120,51 +120,18 @@ function BookingWizardContent() {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>(initialFacilityId);
   const [selectedCaregiverId, setSelectedCaregiverId] = useState<string>(initialCaregiverId);
 
-  // Custom Tasks List
-  const defaultTaskTemplates: Record<ServiceCategory, { title: string; desc: string; time: string }[]> = {
-    elderly: [
-      { title: 'Pendampingan Jalan Pagi & Peregangan', desc: 'Dampingi jalan di teras 15 menit dengan tongkat', time: '09:00 WIB' },
-      { title: 'Sajikan Makan Siang Sehat & Cek Tensi', desc: 'Sup hangat rendah garam dan ukur tensi darah', time: '11:30 WIB' },
-      { title: 'Pemberian Obat Rutin & Istirahat Siang', desc: 'Pastikan obat tensi diminum tepat waktu', time: '13:00 WIB' },
-    ],
-    child: [
-      { title: 'Penyambutan & Sarapan Bergizi', desc: 'Sarapan susu dan sereal sehat bersama anak', time: '08:30 WIB' },
-      { title: 'Aktivitas Belajar & Stimulasi Kreatif', desc: 'Bermain puzzle atau mewarnai buku gambar', time: '10:00 WIB' },
-      { title: 'Makan Siang & Waktu Tidur Siang', desc: 'Tidur siang 1-2 jam di ruangan yang hening', time: '12:30 WIB' },
-    ],
-    pet: [
-      { title: 'Pemberian Pakan Basah & Air Segar', desc: 'Wet food 1 kaleng dan ganti mangkok air minum', time: '09:00 WIB' },
-      { title: 'Jalan Santai / Dog Walking di Taman', desc: 'Jalan santai 15-20 menit dengan tali kekang', time: '10:30 WIB' },
-      { title: 'Sisir Bulu & Bersihkan Litter Box', desc: 'Pastikan kotak pasir bersih dan bulu disisir rapi', time: '13:00 WIB' },
-    ]
-  };
-
-  const [tasks, setTasks] = useState<{ title: string; description: string; scheduled_time: string; is_required_photo: boolean }[]>(
-    defaultTaskTemplates[category].map(t => ({
-      title: t.title,
-      description: t.desc,
-      scheduled_time: t.time,
-      is_required_photo: true,
-    }))
-  );
+  // Custom Tasks List (Starts empty so user creates their own tasks)
+  const [tasks, setTasks] = useState<{ title: string; description: string; scheduled_time: string; is_required_photo: boolean }[]>([]);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
-  const [newTaskTime, setNewTaskTime] = useState('14:00 WIB');
+  const [newTaskTime, setNewTaskTime] = useState('09:00 WIB');
   const [h1Error, setH1Error] = useState<string | null>(null);
   const [step1Error, setStep1Error] = useState<string | null>(null);
 
-  // Handle category change -> update task templates, keep user-filled recipient data
+  // Handle category change -> keep user-created tasks intact
   const handleCategoryChange = (newCat: ServiceCategory) => {
     setCategory(newCat);
-    setTasks(
-      defaultTaskTemplates[newCat].map(t => ({
-        title: t.title,
-        description: t.desc,
-        scheduled_time: t.time,
-        is_required_photo: true,
-      }))
-    );
   };
 
   // Add custom task
@@ -304,6 +271,14 @@ function BookingWizardContent() {
     if (currentStep === 2) {
       if (!validateH1()) return;
     }
+
+    if (currentStep === 3) {
+      if (tasks.length === 0) {
+        alert('Mohon buat dan tambahkan minimal 1 tugas atau instruksi pada Care Plan agar pengasuh memahami apa yang harus dilakukan.');
+        return;
+      }
+    }
+
     setCurrentStep(prev => prev + 1);
   };
 
@@ -1070,7 +1045,18 @@ function BookingWizardContent() {
 
           {/* Existing Tasks List */}
           <div className="space-y-2.5">
-            {tasks.map((task, idx) => {
+            {tasks.length === 0 ? (
+              <div className="p-6 sm:p-8 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-sm text-gray-900">Belum Ada Tugas Care Plan</h4>
+                <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
+                  Tidak ada tugas mockup bawaan. Silakan susun tugas dan jadwal instruksi asuhan Anda sendiri menggunakan formulir di bawah.
+                </p>
+              </div>
+            ) : (
+              tasks.map((task, idx) => {
               const isEditing = editingTaskIndex === idx;
 
               if (isEditing) {
@@ -1202,28 +1188,28 @@ function BookingWizardContent() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
 
           {/* Add New Custom Task Builder */}
           <div className="p-4 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/30 space-y-3">
             <h4 className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
               <Plus className="w-4 h-4 text-emerald-600" />
-              <span>Tambah Tugas Tambahan / Instruksi Khusus:</span>
+              <span>{tasks.length === 0 ? 'Buat Tugas Care Plan Pertama Anda:' : 'Tambah Tugas Tambahan / Instruksi Khusus:'}</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Judul tugas (contoh: Berikan obat tensi pukul 14:00)..."
+                placeholder="Judul tugas (contoh: Menyiapkan sarapan, Dampingi minum obat)..."
                 className="sm:col-span-2 text-xs p-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               />
               <input
                 type="text"
                 value={newTaskTime}
                 onChange={(e) => setNewTaskTime(e.target.value)}
-                placeholder="14:00 WIB"
+                placeholder="09:00 WIB"
                 className="text-xs p-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               />
             </div>
