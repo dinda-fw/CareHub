@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Baby, Heart, PawPrint, Home, Building2, Calendar, Clock,
   MapPin, ShieldCheck, Sparkles, Plus, Trash2, CheckCircle2,
-  AlertTriangle, ArrowRight, ArrowLeft, Camera, Check,
+  AlertTriangle, ArrowRight, ArrowLeft, Camera, Check, Pencil,
   LocateFixed, Navigation, User, FileText, CheckCircle, Lock, X, ShieldAlert
 } from 'lucide-react';
 import { useCareNest } from '@/lib/CareNestContext';
@@ -39,45 +39,21 @@ function BookingWizardContent() {
   const [category, setCategory] = useState<ServiceCategory>(initialCategory);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>(initialFacilityId ? 'partner_facility' : 'home_visit');
 
-  // CUSTOM RECIPIENT DATA (Customer fills their own data)
-  const defaultRecipientPresets: Record<ServiceCategory, { name: string; age: string; genderOrBreed: string; needs: string; criteria: string }> = {
-    elderly: {
-      name: 'Ibu Ratna Hendrawan',
-      age: '71 Tahun',
-      genderOrBreed: 'Perempuan',
-      needs: 'Pendampingan jalan santai di teras (menggunakan tongkat), pemantauan jadwal minum obat tensi pukul 13:00 WIB, dan ukur tensi darah siang.',
-      criteria: 'Diutamakan Ners / perawat lulusan D3/S1 Keperawatan, sabar, telaten, ramah lansia, dan tidak merokok.',
-    },
-    child: {
-      name: 'Adik Alvaro Putra',
-      age: '3.5 Tahun',
-      genderOrBreed: 'Laki-laki',
-      needs: 'Pendampingan stimulasi bermain edukatif (puzzle/mewarnai), jadwal makan siang & minum susu tepat waktu, tidur siang pukul 12:30 WIB.',
-      criteria: 'Pernah mengajar PAUD / telaten menangani balita aktif, ceria, memiliki sertifikat First Aid anak.',
-    },
-    pet: {
-      name: 'Milo ',
-      age: '2 Tahun',
-      genderOrBreed: 'Anjing Golden Retriever',
-      needs: 'Pemberian pakan kering premium 250gr + air mineral bersih, jalan santai keliling komplek 20 menit dengan tali kekang, sisir bulu halus.',
-      criteria: 'Pecinta anjing ras besar, memahami handling anjing aktif, tidak takut anjing, mahasiswa/alumni Kedokteran Hewan diutamakan.',
-    },
-  };
-
-  const [recipientName, setRecipientName] = useState<string>(defaultRecipientPresets[initialCategory].name);
-  const [recipientAge, setRecipientAge] = useState<string>(defaultRecipientPresets[initialCategory].age);
-  const [recipientGenderOrBreed, setRecipientGenderOrBreed] = useState<string>(defaultRecipientPresets[initialCategory].genderOrBreed);
-  const [recipientNeeds, setRecipientNeeds] = useState<string>(defaultRecipientPresets[initialCategory].needs);
-  const [caregiverCriteria, setCaregiverCriteria] = useState<string>(defaultRecipientPresets[initialCategory].criteria);
+  // CUSTOM RECIPIENT DATA (Customer fills their own real data, no mockup)
+  const [recipientName, setRecipientName] = useState<string>('');
+  const [recipientAge, setRecipientAge] = useState<string>('');
+  const [recipientGenderOrBreed, setRecipientGenderOrBreed] = useState<string>('');
+  const [recipientNeeds, setRecipientNeeds] = useState<string>('');
+  const [caregiverCriteria, setCaregiverCriteria] = useState<string>('');
 
   // LOCATION & GPS STATE (All Indonesian Cities + Real-Time Device GPS)
   const [city, setCity] = useState<string>('Kota Surabaya');
   const [district, setDistrict] = useState<string>(currentUser?.district || 'Kecamatan Wonocolo');
-  const [address, setAddress] = useState<string>(currentUser?.address || 'Jl. Raya sidosermo No. 45');
+  const [address, setAddress] = useState<string>(currentUser?.address || 'Jl. Raya Sidosermo No. 45');
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; accuracy?: number } | null>(
     currentUser?.latitude && currentUser?.longitude
       ? { lat: currentUser.latitude, lng: currentUser.longitude, accuracy: 10 }
-      : { lat: -7.2575, lng: 112.7521, accuracy: 12 }
+      : { lat: -7.3168, lng: 112.7486, accuracy: 10 }
   );
   const [isDetectingGps, setIsDetectingGps] = useState(false);
   const [gpsMessage, setGpsMessage] = useState<string | null>(null);
@@ -178,14 +154,9 @@ function BookingWizardContent() {
   const [h1Error, setH1Error] = useState<string | null>(null);
   const [step1Error, setStep1Error] = useState<string | null>(null);
 
-  // Handle category change -> update presets
+  // Handle category change -> update task templates, keep user-filled recipient data
   const handleCategoryChange = (newCat: ServiceCategory) => {
     setCategory(newCat);
-    setRecipientName(defaultRecipientPresets[newCat].name);
-    setRecipientAge(defaultRecipientPresets[newCat].age);
-    setRecipientGenderOrBreed(defaultRecipientPresets[newCat].genderOrBreed);
-    setRecipientNeeds(defaultRecipientPresets[newCat].needs);
-    setCaregiverCriteria(defaultRecipientPresets[newCat].criteria);
     setTasks(
       defaultTaskTemplates[newCat].map(t => ({
         title: t.title,
@@ -215,6 +186,46 @@ function BookingWizardContent() {
   // Remove task
   const handleRemoveTask = (idx: number) => {
     setTasks(tasks.filter((_, i) => i !== idx));
+    if (editingTaskIndex === idx) {
+      setEditingTaskIndex(null);
+    }
+  };
+
+  // Edit Task State & Handlers
+  const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState<string>('');
+  const [editTaskDesc, setEditTaskDesc] = useState<string>('');
+  const [editTaskTime, setEditTaskTime] = useState<string>('');
+  const [editTaskPhoto, setEditTaskPhoto] = useState<boolean>(true);
+
+  const handleStartEditTask = (idx: number) => {
+    const task = tasks[idx];
+    setEditingTaskIndex(idx);
+    setEditTaskTitle(task.title);
+    setEditTaskDesc(task.description);
+    setEditTaskTime(task.scheduled_time);
+    setEditTaskPhoto(task.is_required_photo);
+  };
+
+  const handleSaveEditTask = () => {
+    if (editingTaskIndex === null) return;
+    if (!editTaskTitle.trim()) {
+      alert('Judul tugas tidak boleh kosong.');
+      return;
+    }
+    const updated = [...tasks];
+    updated[editingTaskIndex] = {
+      title: editTaskTitle.trim(),
+      description: editTaskDesc.trim() || 'Tugas khusus sesuai instruksi keluarga',
+      scheduled_time: editTaskTime.trim() || 'Sesuai jadwal',
+      is_required_photo: editTaskPhoto,
+    };
+    setTasks(updated);
+    setEditingTaskIndex(null);
+  };
+
+  const handleCancelEditTask = () => {
+    setEditingTaskIndex(null);
   };
 
   // Calculation of pricing
@@ -585,32 +596,9 @@ function BookingWizardContent() {
                   <span>Informasi Lengkap Penerima Asuhan</span>
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Tuliskan data anggota keluarga / hewan yang diasuh agar pengasuh memahami kondisinya.
+                  Silakan isi data mandiri penerima asuhan (anggota keluarga atau hewan kesayangan) secara lengkap.
                 </p>
               </div>
-
-              {/* Saved Profiles Quick Fill Shortcuts */}
-              {recipients.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-gray-400">Contoh Cepat:</span>
-                  {recipients.filter(r => r.type === category).map(rec => (
-                    <button
-                      key={rec.id}
-                      type="button"
-                      onClick={() => {
-                        setRecipientName(rec.name);
-                        setRecipientAge(rec.age_or_details);
-                        setRecipientGenderOrBreed(rec.gender_or_breed);
-                        setRecipientNeeds(rec.special_needs);
-                        setStep1Error(null);
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 transition-colors border border-gray-200"
-                    >
-                      {rec.name}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Form Fields: Name, Age, Gender/Breed */}
@@ -623,7 +611,7 @@ function BookingWizardContent() {
                   type="text"
                   value={recipientName}
                   onChange={(e) => { setRecipientName(e.target.value); setStep1Error(null); }}
-                  placeholder={category === 'elderly' ? 'Contoh: Ibu Ratna Hendrawan' : category === 'child' ? 'Contoh: Alvaro Putra' : 'Contoh: Milo the Dog'}
+                  placeholder={category === 'elderly' ? 'Masukkan nama lengkap lansia...' : category === 'child' ? 'Masukkan nama lengkap anak...' : 'Masukkan nama hewan peliharaan...'}
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium"
                 />
               </div>
@@ -636,7 +624,7 @@ function BookingWizardContent() {
                   type="text"
                   value={recipientAge}
                   onChange={(e) => { setRecipientAge(e.target.value); setStep1Error(null); }}
-                  placeholder={category === 'elderly' ? 'Contoh: 71 Tahun' : category === 'child' ? 'Contoh: 3.5 Tahun' : 'Contoh: 2 Tahun'}
+                  placeholder={category === 'elderly' ? 'Contoh: 70 Tahun' : category === 'child' ? 'Contoh: 3 Tahun' : 'Contoh: 2 Tahun'}
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
                 />
               </div>
@@ -649,7 +637,7 @@ function BookingWizardContent() {
                   type="text"
                   value={recipientGenderOrBreed}
                   onChange={(e) => setRecipientGenderOrBreed(e.target.value)}
-                  placeholder={category === 'pet' ? 'Contoh: Golden Retriever / Kucing Persia' : 'Contoh: Perempuan / Laki-laki'}
+                  placeholder={category === 'pet' ? 'Contoh: Anjing Golden Retriever / Kucing Persia' : 'Contoh: Perempuan / Laki-laki'}
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
                 />
               </div>
@@ -666,10 +654,10 @@ function BookingWizardContent() {
                 onChange={(e) => { setRecipientNeeds(e.target.value); setStep1Error(null); }}
                 placeholder={
                   category === 'elderly'
-                    ? 'Tuliskan kebutuhan lansia: misal pasca stroke, jalan harus dibantu tongkat, kontrol jadwal obat tensi pukul 13:00, diet rendah garam...'
+                    ? 'Tuliskan kebutuhan lansia (misal pendampingan jalan dengan tongkat, jadwal obat tensi pukul 13:00, diet rendah garam, ukur tensi darah)...'
                     : category === 'child'
-                      ? 'Tuliskan kebutuhan anak: misal alergi susu sapi, waktu tidur siang pukul 12:30, kebiasaan sebelum tidur, mainan yang disukai...'
-                      : 'Tuliskan kebutuhan hewan: porsi pakan wet food, jadwal dog walking dengan leash di taman, obat/vitamin yang harus diberikan...'
+                      ? 'Tuliskan kebutuhan anak (misal pendampingan bermain edukatif, jadwal makan & susu, alergi tertentu, jam tidur siang)...'
+                      : 'Tuliskan kebutuhan hewan (pemberian pakan porsi tertentu, jadwal dog walking di taman, pembersihan litter box, vitamin)...'
                 }
                 className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white leading-relaxed"
               />
@@ -678,14 +666,14 @@ function BookingWizardContent() {
             {/* Caregiver Criteria Requested */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
-                <span>Kriteria Pengasuh / Talent yang Dicari:</span>
-                <span className="text-[10px] text-emerald-700 font-normal">Akan dicantumkan pada bursa lowongan kerja</span>
+                <span>Kriteria Pengasuh / Talent yang Dicari (Opsional):</span>
+                <span className="text-[10px] text-emerald-700 font-normal">Akan dicantumkan pada lowongan</span>
               </label>
               <textarea
                 rows={2}
                 value={caregiverCriteria}
                 onChange={(e) => setCaregiverCriteria(e.target.value)}
-                placeholder="Contoh: Diutamakan lulusan Ners Keperawatan / PG-PAUD, sabar, tidak merokok, komunikatif, berpengalaman menangani lansia/balita..."
+                placeholder="Tuliskan kriteria yang diharapkan (contoh: sabar, telaten, ramah, tidak merokok, pengalaman di bidang keperawatan/PAUD jika diinginkan)..."
                 className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white leading-relaxed"
               />
             </div>
@@ -1082,41 +1070,139 @@ function BookingWizardContent() {
 
           {/* Existing Tasks List */}
           <div className="space-y-2.5">
-            {tasks.map((task, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/60 flex items-start justify-between gap-3"
-              >
-                <div className="flex items-start gap-2.5">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center mt-0.5">
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-xs text-gray-900">{task.title}</span>
-                      <span className="px-2 py-0.2 text-[10px] font-medium bg-gray-200 text-gray-700 rounded-full">
-                        {task.scheduled_time}
+            {tasks.map((task, idx) => {
+              const isEditing = editingTaskIndex === idx;
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 space-y-3 shadow-xs animate-in fade-in"
+                  >
+                    <div className="flex items-center justify-between pb-1 border-b border-emerald-200">
+                      <span className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                        <Pencil className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Edit Tugas #{idx + 1}</span>
                       </span>
-                      {task.is_required_photo && (
-                        <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded flex items-center gap-0.5">
-                          <Camera className="w-2.5 h-2.5" /> Wajib Foto + GPS
-                        </span>
-                      )}
+                      <span className="text-[10px] text-gray-500">Sesuaikan instruksi pendampingan</span>
                     </div>
-                    <p className="text-[11px] text-gray-600 mt-0.5">{task.description}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1">Judul Tugas: *</label>
+                        <input
+                          type="text"
+                          value={editTaskTitle}
+                          onChange={(e) => setEditTaskTitle(e.target.value)}
+                          placeholder="Judul tugas..."
+                          className="w-full text-xs p-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1">Jadwal Waktu: *</label>
+                        <input
+                          type="text"
+                          value={editTaskTime}
+                          onChange={(e) => setEditTaskTime(e.target.value)}
+                          placeholder="contoh: 09:30 WIB"
+                          className="w-full text-xs p-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Detail Instruksi Pengerjaan:</label>
+                      <textarea
+                        rows={2}
+                        value={editTaskDesc}
+                        onChange={(e) => setEditTaskDesc(e.target.value)}
+                        placeholder="Detail instruksi untuk pengasuh..."
+                        className="w-full text-xs p-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={editTaskPhoto}
+                          onChange={(e) => setEditTaskPhoto(e.target.checked)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-[11px] font-semibold text-gray-700 flex items-center gap-1">
+                          <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                          Wajib Upload Foto Bukti & Koordinat GPS Real-Time
+                        </span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditTask}
+                          className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-200 transition-colors"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveEditTask}
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Simpan Perubahan</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white flex items-start justify-between gap-3 transition-colors shadow-2xs"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center mt-0.5 shrink-0">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-xs text-gray-900">{task.title}</span>
+                        <span className="px-2 py-0.2 text-[10px] font-medium bg-gray-200 text-gray-700 rounded-full">
+                          {task.scheduled_time}
+                        </span>
+                        {task.is_required_photo && (
+                          <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded flex items-center gap-0.5">
+                            <Camera className="w-2.5 h-2.5" /> Wajib Foto + GPS
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-600 mt-0.5 leading-relaxed">{task.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditTask(idx)}
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                      title="Edit tugas ini"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTask(idx)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Hapus tugas"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTask(idx)}
-                  className="text-gray-400 hover:text-red-500 p-1 transition-colors"
-                  title="Hapus tugas"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add New Custom Task Builder */}
