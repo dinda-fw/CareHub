@@ -31,6 +31,8 @@ function BookingWizardContent() {
   // Wizard Steps: 1: Kebutuhan & Penerima, 2: Jadwal & Paket, 3: Custom Care Tasks, 4: Ringkasan & Escrow
   const [currentStep, setCurrentStep] = useState(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showJobPublishedModal, setShowJobPublishedModal] = useState(false);
+  const [publishedOrderId, setPublishedOrderId] = useState<string | null>(null);
   const [createdOrderInfo, setCreatedOrderInfo] = useState<{ id: string; number: string; amount: number } | null>(null);
 
   // Form State - Category & Fulfillment
@@ -404,12 +406,21 @@ function BookingWizardContent() {
     });
 
     if (result.success && result.orderId) {
+      const orderNum = `CN-SBY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       setCreatedOrderInfo({
         id: result.orderId,
-        number: `CN-SBY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        number: orderNum,
         amount: totalAmount,
       });
-      setShowPaymentModal(true);
+
+      // Jika open job home visit (belum pilih pengasuh spesifik), arahkan ke seleksi pelamar HRD terlebih dahulu!
+      if (fulfillment === 'home_visit' && !selectedCaregiverId) {
+        setPublishedOrderId(result.orderId);
+        setShowJobPublishedModal(true);
+      } else {
+        // Jika pre-selected fasilitas mitra atau langsung pengasuh tertentu
+        setShowPaymentModal(true);
+      }
     } else {
       alert(result.error || 'Gagal memproses pesanan.');
     }
@@ -438,7 +449,7 @@ function BookingWizardContent() {
           { num: 1, label: 'Kebutuhan & Lokasi' },
           { num: 2, label: 'Jadwal & Paket' },
           { num: 3, label: 'Custom Tasks' },
-          { num: 4, label: 'Escrow & Bayar' },
+          { num: 4, label: 'Rancangan & Publikasi' },
         ].map(step => (
           <div key={step.num} className="flex flex-col items-center">
             <div
@@ -1097,9 +1108,9 @@ function BookingWizardContent() {
       {currentStep === 4 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6 animate-in fade-in">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 mb-1">4. Ringkasan Pesanan & Pembayaran Escrow</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">4. Rancangan Biaya (Nomine) & Publikasi Lowongan</h2>
             <p className="text-xs text-gray-500">
-              Dana Anda akan ditahan secara aman di sistem Escrow CareNest dan baru dicairkan setelah tugas selesai dikonfirmasi.
+              Periksa estimasi rancangan biaya yang akan dibayar. Lowongan akan dipublikasikan ke bursa caregiver, Anda menyeleksi pelamar seperti HRD, dan pembayaran baru dilakukan (di-hold ke Escrow) setelah Anda deal dengan pengasuh pilihan.
             </p>
           </div>
 
@@ -1149,13 +1160,39 @@ function BookingWizardContent() {
             </div>
 
             <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-base font-bold text-emerald-900">
-              <span>Total Deposit Escrow:</span>
+              <span>Total Rancangan Biaya (Nomine):</span>
               <span className="text-lg text-emerald-700">Rp {totalAmount.toLocaleString('id-ID')}</span>
+            </div>
+
+            {/* Step-by-step workflow callout */}
+            <div className="p-3.5 rounded-xl bg-white border border-emerald-200 text-xs space-y-2 mt-2">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Alur Seleksi & Pembayaran Tanpa Bayar di Awal:</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-[11px] text-gray-600">
+                <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                  <span className="font-bold text-emerald-800 block mb-0.5">1. Upload Lowongan</span>
+                  Tugas & kriteria dipublikasikan ke bursa pengasuh.
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                  <span className="font-bold text-emerald-800 block mb-0.5">2. Pengasuh Melamar</span>
+                  Caregiver mengirimkan profil, STR, SKCK & penawaran.
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                  <span className="font-bold text-emerald-800 block mb-0.5">3. Seleksi ala HRD</span>
+                  Customer memilih pelamar terbaik sesuai profil lengkap.
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                  <span className="font-bold text-emerald-800 block mb-0.5">4. Deal & Bayar Escrow</span>
+                  Setelah deal, baru bayar & dana di-HOLD aman di CareHub.
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 pt-1">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Sistem Escrow: Uang ditahan aman. Pencairan ke mitra baru dilakukan setelah konfirmasi selesai.</span>
+              <span>Sistem Escrow: Tidak ada pemotongan saldo saat ini. Pembayaran baru dilakukan setelah kesepakatan kandidat.</span>
             </div>
           </div>
 
@@ -1233,15 +1270,68 @@ function BookingWizardContent() {
               {(!isLoggedIn || currentUser?.role !== 'customer') ? (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Verifikasi Diri & Bayar ke Escrow</span>
+                  <span>Verifikasi Diri & Publikasikan Lowongan</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Bayar ke Escrow (QRIS / VA / Midtrans)</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Publikasikan Lowongan & Cari Pengasuh</span>
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SUKSES PUBLIKASI LOWONGAN & ARAHAN SELEKSI PELAMAR (HRD VIEW) */}
+      {showJobPublishedModal && publishedOrderId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 border border-emerald-200 shadow-2xl relative">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+              <Sparkles className="w-8 h-8 text-emerald-600 animate-pulse" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                Lowongan Berhasil Diunggah!
+              </span>
+              <h3 className="text-xl font-bold text-gray-900">
+                Care Request Dipublikasikan ke Bursa Talent
+              </h3>
+              <p className="text-xs text-gray-600 max-w-sm mx-auto leading-relaxed">
+                Permintaan asuhan untuk <strong>{recipientName}</strong> telah aktif. Beberapa pengasuh terverifikasi di Surabaya telah mengirimkan lamaran mereka!
+              </p>
+            </div>
+
+            {/* Nominasi Biaya Info */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-teal-50/70 border border-emerald-200 space-y-2 text-xs">
+              <div className="flex justify-between items-center text-gray-600">
+                <span>Rancangan Biaya (Nomine):</span>
+                <span className="font-extrabold text-sm text-emerald-900">Rp {totalAmount.toLocaleString('id-ID')}</span>
+              </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                💡 <strong>Belum Ada Pembayaran yang Ditagihkan!</strong> Anda baru melakukan pembayaran (di-HOLD di Escrow CareHub) setelah Anda menyeleksi profil, latar belakang & deal dengan pengasuh pilihan Anda.
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => router.push(`/customer/order/${publishedOrderId}`)}
+                className="w-full py-3.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <span>Lihat & Seleksi Pelamar Sekarang (HR View)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/customer')}
+                className="w-full py-2.5 rounded-xl font-semibold text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+              >
+                Ke Dashboard Customer Nanti
+              </button>
+            </div>
           </div>
         </div>
       )}

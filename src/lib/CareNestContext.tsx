@@ -64,7 +64,9 @@ interface CareNestContextType {
   releaseEscrow: (orderId: string) => { success: boolean; error?: string };
   addReview: (orderId: string, rating: number, comment: string) => void;
   applyToJob: (orderId: string, proposedRate: number, proposalNote: string) => { success: boolean; error?: string };
-  acceptJobBid: (orderId: string, bidId: string) => { success: boolean; error?: string };
+  acceptJobBid: (orderId: string, bidId: string) => { success: boolean; order?: Order; error?: string };
+  cancelCaregiverSelection: (orderId: string) => { success: boolean; error?: string };
+  simulateApplicant: (orderId: string) => { success: boolean; bid?: JobBid; error?: string };
   registerTalent: (formData: {
     name: string;
     email: string;
@@ -320,7 +322,7 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       discount_amount: discountAmount,
       platform_fee: platformFee,
       total_amount: totalAmount,
-      escrow_status: 'held',
+      escrow_status: caregiver || facility ? 'held' : 'pending',
       order_status: caregiver || facility ? 'confirmed' : 'awaiting_applicants',
       progress_percentage: 0,
       notes: data.notes,
@@ -328,8 +330,91 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       created_at: new Date().toISOString(),
     };
 
+    let updatedBids = [...appState.bids];
+    if (!caregiver && !facility) {
+      // Auto-seed realistic applicant bids for HR-style caregiver selection
+      const isPet = data.serviceCategory === 'pet';
+      const isChild = data.serviceCategory === 'child';
+
+      const seededBids: JobBid[] = [
+        {
+          id: `bid-${newOrderId}-1`,
+          order_id: newOrderId,
+          caregiver_id: 'c2000000-0000-0000-0000-000000000001',
+          caregiver_name: 'Dinda Ayu, S.Kep',
+          caregiver_rating: 4.95,
+          caregiver_avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200',
+          proposed_rate: 50000,
+          proposal_note: isPet 
+            ? `Halo Bapak/Ibu ${currentUser.full_name}, saya pecinta hewan terlatih. Siap mendampingi dan merawat anabul kesayangan dengan kasih sayang, pemberian pakan tepat waktu, dan kebersihan terjaga.`
+            : isChild
+            ? `Halo Bapak/Ibu ${currentUser.full_name}, saya perawat Ners UNAIR dengan sertifikat Pediatric First Aid. Siap mendampingi ${recipient.name} bermain edukatif, menjaga nutrisi, dan tidur siang teratur.`
+            : `Halo Bapak/Ibu ${currentUser.full_name}, saya perawat Ners lulusan UNAIR. Siap mendampingi ${recipient.name} dengan protokol keperawatan lengkap: cek tensi berkala, kontrol obat rutin, dan pendampingan fisik telaten.`,
+          status: 'submitted',
+          created_at: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+          education: 'S1 Ners Keperawatan Univ. Airlangga',
+          experience_years: 3,
+          verified_skck: true,
+          verified_ktp: true,
+          badges: ['STR Perawat Aktif', 'SKCK Polda Jatim', 'First Aid Certified', 'Bebas Rokok'],
+          bio: 'Lulusan Ners Keperawatan UNAIR Surabaya. Berpengalaman 3 tahun mendampingi lansia geriatri pasca stroke, kontrol jadwal obat rutin, cek tensi & gula darah, serta pendampingan anak.',
+          phone: '0821-5566-7788',
+        },
+        {
+          id: `bid-${newOrderId}-2`,
+          order_id: newOrderId,
+          caregiver_id: 'c2000000-0000-0000-0000-000000000002',
+          caregiver_name: 'Sari Wahyuni, S.Pd',
+          caregiver_rating: 4.88,
+          caregiver_avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200',
+          proposed_rate: 45000,
+          proposal_note: isChild
+            ? `Halo! Saya mantan pendidik PAUD & Playgroup Surabaya 5 tahun. Sangat antusias mendampingi ${recipient.name} belajar kreatif, mewarnai, bermain puzzle, dan menjaga jadwal makan siang.`
+            : `Halo! Saya pendamping keluarga berpengalaman di Surabaya. Sangat sabar, telaten, dan siap menciptakan lingkungan yang aman, bersih, dan nyaman untuk ${recipient.name}.`,
+          status: 'submitted',
+          created_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+          education: 'S1 PG-PAUD Univ. Negeri Surabaya',
+          experience_years: 5,
+          verified_skck: true,
+          verified_ktp: true,
+          badges: ['Pendidik PAUD', 'Child Care Spesialis', 'Stimulasi Sensorik', 'SKCK Polda Jatim'],
+          bio: 'Eks Pendidik PAUD & Playgroup Surabaya selama 5 tahun. Spesialis mendampingi balita (1-5 tahun), stimulasi sensori motorik, potty training, dan jadwal nutrisi teratur.',
+          phone: '0813-9876-5432',
+        },
+        {
+          id: `bid-${newOrderId}-3`,
+          order_id: newOrderId,
+          caregiver_id: isPet ? 'c2000000-0000-0000-0000-000000000003' : 'c2000000-0000-0000-0000-000000000004',
+          caregiver_name: isPet ? 'Fajar Pratama, S.KH' : 'Rian Hidayat, A.Md.Fis',
+          caregiver_rating: isPet ? 5.0 : 4.92,
+          caregiver_avatar: isPet 
+            ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' 
+            : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
+          proposed_rate: isPet ? 40000 : 55000,
+          proposal_note: isPet
+            ? `Halo! Saya alumni Kedokteran Hewan FKH UNAIR. Terbiasa merawat anabul, dog walking rutin, pemberian vitamin/obat resep dokter hewan, dan pembersihan bulu secara higienis.`
+            : `Selamat siang, saya fisioterapis berlisensi STR Kemenkes. Siap membantu mobilitas fisik, peregangan otot, dan pencegahan risiko jatuh lansia dengan teknik pendampingan medis yang aman.`,
+          status: 'submitted',
+          created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+          education: isPet ? 'S1 Kedokteran Hewan UNAIR' : 'D3 Fisioterapi Poltekkes Kemenkes Surabaya',
+          experience_years: isPet ? 2 : 4,
+          verified_skck: true,
+          verified_ktp: true,
+          badges: isPet 
+            ? ['Medis Hewan UNAIR', 'Pet Handling', 'First Aid Hewan', 'SKCK Polda Jatim']
+            : ['Fisioterapis STR', 'Elderly Mobility', 'Rehabilitasi Medik', 'SKCK Polda Jatim'],
+          bio: isPet 
+            ? 'Alumni Kedokteran Hewan (FKH UNAIR). Terbiasa merawat anjing ras besar/kecil, kucing persia/domestik, pemberian obat, dan grooming dasar.'
+            : 'Fisioterapis berlisensi STR. Khusus pendampingan mobilisasi fisik lansia, latihan jalan santai pasca stroke, dan latihan keseimbangan.',
+          phone: isPet ? '0812-8899-7711' : '0857-1122-3344',
+        }
+      ];
+
+      updatedBids = [...seededBids, ...updatedBids];
+    }
+
     const updatedOrders = [newOrder, ...appState.orders];
-    const newState = { ...appState, orders: updatedOrders, recipients: updatedRecipients };
+    const newState = { ...appState, orders: updatedOrders, recipients: updatedRecipients, bids: updatedBids };
     saveAppState(newState);
     setAppState(newState);
 
@@ -471,7 +556,24 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     order.caregiver_id = bid.caregiver_id;
     order.caregiver_name = bid.caregiver_name;
     order.caregiver_avatar = bid.caregiver_avatar;
-    order.order_status = 'confirmed';
+    order.caregiver_phone = bid.phone || '0821-5566-7788';
+
+    // Recalculate cost based on chosen caregiver's agreed proposed rate
+    if (bid.proposed_rate > 0) {
+      const baseSubtotal = bid.proposed_rate * order.duration_hours * order.days_count;
+      let discountRate = 0;
+      if (order.package_type === 'weekly') discountRate = 0.05;
+      if (order.package_type === 'monthly') discountRate = 0.15;
+      const discountAmount = Math.round(baseSubtotal * discountRate);
+      const priceAfterDiscount = baseSubtotal - discountAmount;
+      const platformFee = Math.round(priceAfterDiscount * 0.10);
+      const totalAmount = priceAfterDiscount + platformFee;
+
+      order.base_price = baseSubtotal;
+      order.discount_amount = discountAmount;
+      order.platform_fee = platformFee;
+      order.total_amount = totalAmount;
+    }
 
     const updatedBids = appState.bids.map(b => {
       if (b.order_id === orderId) {
@@ -487,7 +589,68 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     saveAppState(newState);
     setAppState(newState);
 
+    return { success: true, order };
+  };
+
+  const cancelCaregiverSelection = (orderId: string) => {
+    const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) return { success: false, error: 'Order tidak ditemukan' };
+
+    const order = { ...appState.orders[orderIndex] };
+    order.caregiver_id = undefined;
+    order.caregiver_name = undefined;
+    order.caregiver_avatar = undefined;
+    order.caregiver_phone = undefined;
+    order.order_status = 'awaiting_applicants';
+
+    const updatedBids = appState.bids.map(b => {
+      if (b.order_id === orderId) {
+        return { ...b, status: 'submitted' as const };
+      }
+      return b;
+    });
+
+    const updatedOrders = [...appState.orders];
+    updatedOrders[orderIndex] = order;
+
+    const newState = { ...appState, orders: updatedOrders, bids: updatedBids };
+    saveAppState(newState);
+    setAppState(newState);
+
     return { success: true };
+  };
+
+  const simulateApplicant = (orderId: string) => {
+    const order = appState.orders.find(o => o.id === orderId);
+    if (!order) return { success: false, error: 'Order tidak ditemukan' };
+
+    const pool = appState.caregivers;
+    const randomCaregiver = pool[Math.floor(Math.random() * pool.length)] || pool[0];
+    const newBid: JobBid = {
+      id: `bid-${orderId}-${Date.now().toString(36)}`,
+      order_id: orderId,
+      caregiver_id: randomCaregiver.user_id,
+      caregiver_name: randomCaregiver.name,
+      caregiver_rating: randomCaregiver.rating,
+      caregiver_avatar: randomCaregiver.avatar_url,
+      proposed_rate: randomCaregiver.hourly_rate,
+      proposal_note: `Halo! Saya ${randomCaregiver.name}. Saya berminat mengambil tugas asuhan ini untuk wilayah Surabaya. Saya telah membaca care plan yang diminta dan siap bertugas profesional sesuai standar CareHub.`,
+      status: 'submitted',
+      created_at: new Date().toISOString(),
+      education: randomCaregiver.education,
+      experience_years: randomCaregiver.experience_years,
+      verified_skck: randomCaregiver.verified_skck,
+      verified_ktp: randomCaregiver.verified_ktp,
+      badges: randomCaregiver.badges,
+      bio: randomCaregiver.bio,
+    };
+
+    const updatedBids = [newBid, ...appState.bids];
+    const newState = { ...appState, bids: updatedBids };
+    saveAppState(newState);
+    setAppState(newState);
+
+    return { success: true, bid: newBid };
   };
 
   const registerTalent = (formData: {
@@ -718,7 +881,14 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateEscrowStatus = (orderId: string, status: EscrowStatus) => {
-    const res = updateOrder(orderId, { escrow_status: status });
+    const updateData: Partial<Order> = { escrow_status: status };
+    if (status === 'held') {
+      const ord = appState.orders.find(o => o.id === orderId);
+      if (ord && (ord.order_status === 'awaiting_applicants' || ord.order_status === 'draft')) {
+        updateData.order_status = 'confirmed';
+      }
+    }
+    const res = updateOrder(orderId, updateData);
     if (status === 'refunded') {
       const ord = appState.orders.find(o => o.id === orderId);
       if (ord) {
@@ -957,6 +1127,8 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addReview,
         applyToJob,
         acceptJobBid,
+        cancelCaregiverSelection,
+        simulateApplicant,
         registerTalent,
         registerCustomer,
         loginCustomerDirect,

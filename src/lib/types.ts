@@ -167,6 +167,13 @@ export interface JobBid {
   proposal_note: string;
   status: 'submitted' | 'accepted' | 'rejected';
   created_at: string;
+  education?: string;
+  experience_years?: number;
+  verified_skck?: boolean;
+  verified_ktp?: boolean;
+  badges?: string[];
+  bio?: string;
+  phone?: string;
 }
 
 export interface Review {

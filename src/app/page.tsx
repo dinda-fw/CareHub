@@ -46,11 +46,11 @@ export default function HomePage() {
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-emerald-200">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Marketplace Pengasuhan Terjadwal No. 1 di Surabaya</span>
+                <span>Marketplace Pengasuhan Terjadwal No. 1 di Indonesia</span>
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-                Pesan Pengasuh & Mitra Care Terpercaya di <span className="text-emerald-300 underline decoration-amber-400 decoration-wavy decoration-2">Surabaya</span>
+                Pesan Pengasuh & Mitra Care Terpercaya di <span className="text-emerald-300 underline decoration-amber-400 decoration-wavy decoration-2">Indonesia</span>
               </h1>
 
               <p className="text-base sm:text-lg text-emerald-100/90 max-w-2xl leading-relaxed">

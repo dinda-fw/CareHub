@@ -118,4 +118,6 @@ File SQL skema database dan seed data lengkap telah disediakan:
    - Berikan ulasan bintang 5 ⭐.
 
 ---
-© 2026 CareNest Indonesia. Sesuai PRD v2.0 Proposal.
+link github : https://github.com/dinda-fw/CareHub
+schema database : 
+https://supabase.com/dashboard/project/mjxogsrrtasaljnknodv/database/schemas
