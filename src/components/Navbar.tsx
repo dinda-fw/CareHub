@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCareNest } from '@/lib/CareNestContext';
-import { 
-  ShieldCheck, MapPin, User, ChevronDown, Bell, Wallet, 
-  Sparkles, HeartHandshake, Compass, Users, Clock, AlertTriangle, 
-  LogOut, LogIn, UserPlus, Briefcase 
+import {
+  ShieldCheck, MapPin, User, ChevronDown, Bell, Wallet,
+  Sparkles, HeartHandshake, Compass, Users, Clock, AlertTriangle,
+  LogOut, LogIn, UserPlus, Briefcase
 } from 'lucide-react';
 import { UserRole } from '@/lib/types';
 
@@ -48,7 +48,7 @@ export const Navbar: React.FC = () => {
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          
+
           {/* Logo & City Badge */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
@@ -73,35 +73,35 @@ export const Navbar: React.FC = () => {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-gray-700">
-            <Link 
+            <Link
               href="/"
               className={`px-3 py-1.5 rounded-lg transition-colors ${pathname === '/' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'hover:text-emerald-600 hover:bg-gray-50'}`}
             >
               Beranda
             </Link>
 
-            <Link 
-              href="/customer/booking" 
+            <Link
+              href="/customer/booking"
               className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${pathname === '/customer/booking' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'hover:text-emerald-600 hover:bg-gray-50'}`}
             >
               <Sparkles className="w-4 h-4 text-emerald-500" />
-              <span>Pesan Care (H-1)</span>
+              <span>Pesan Care</span>
             </Link>
 
-            <Link 
-              href="/customer/facilities" 
+            <Link
+              href="/customer/facilities"
               className={`px-3 py-1.5 rounded-lg transition-colors ${pathname === '/customer/facilities' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'hover:text-emerald-600 hover:bg-gray-50'}`}
             >
               Mitra Terdekat
             </Link>
 
             {/* Combined Talent Menu: Daftar Talent & Pendaftaran Oprec */}
-            <div 
+            <div
               className="relative"
               onMouseEnter={() => setTalentMenuOpen(true)}
               onMouseLeave={() => setTalentMenuOpen(false)}
             >
-              <button 
+              <button
                 type="button"
                 onClick={() => setTalentMenuOpen(!talentMenuOpen)}
                 className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${(pathname === '/customer/talent' || pathname === '/talent/register') ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'hover:text-emerald-600 hover:bg-gray-50'}`}
@@ -159,8 +159,8 @@ export const Navbar: React.FC = () => {
 
             {/* Portal link if logged in */}
             {isLoggedIn && currentUser?.role === 'customer' && (
-              <Link 
-                href="/customer" 
+              <Link
+                href="/customer"
                 className={`px-3 py-1.5 rounded-lg transition-colors ${pathname === '/customer' ? 'text-emerald-600 bg-emerald-50 font-semibold' : 'hover:text-emerald-600 hover:bg-gray-50'}`}
               >
                 Dashboard Customer
@@ -168,8 +168,8 @@ export const Navbar: React.FC = () => {
             )}
 
             {isLoggedIn && currentUser?.role === 'caregiver' && (
-              <Link 
-                href="/caregiver" 
+              <Link
+                href="/caregiver"
                 className={`px-3 py-1.5 rounded-lg transition-colors ${pathname.startsWith('/caregiver') ? 'text-blue-600 bg-blue-50 font-semibold' : 'hover:text-blue-600 hover:bg-gray-50'}`}
               >
                 Menu Pengasuh
@@ -177,8 +177,8 @@ export const Navbar: React.FC = () => {
             )}
 
             {isLoggedIn && currentUser?.role === 'facility' && (
-              <Link 
-                href="/facility" 
+              <Link
+                href="/facility"
                 className={`px-3 py-1.5 rounded-lg transition-colors ${pathname.startsWith('/facility') ? 'text-purple-600 bg-purple-50 font-semibold' : 'hover:text-purple-600 hover:bg-gray-50'}`}
               >
                 Menu Fasilitas
@@ -186,8 +186,8 @@ export const Navbar: React.FC = () => {
             )}
 
             {isLoggedIn && currentUser?.role === 'admin' && (
-              <Link 
-                href="/admin" 
+              <Link
+                href="/admin"
                 className={`px-3 py-1.5 rounded-lg transition-colors ${pathname.startsWith('/admin') ? 'text-amber-600 bg-amber-50 font-semibold' : 'hover:text-amber-600 hover:bg-gray-50'}`}
               >
                 Admin Panel
@@ -197,7 +197,7 @@ export const Navbar: React.FC = () => {
 
           {/* Right Section: Guest vs Logged In */}
           <div className="flex items-center gap-3">
-            
+
             {/* If NOT Logged In (Guest View: Bersih hanya Masuk & Daftar) */}
             {!isLoggedIn && (
               <div className="flex items-center gap-2">
@@ -240,7 +240,7 @@ export const Navbar: React.FC = () => {
                   </button>
 
                   {roleMenuOpen && (
-                    <div 
+                    <div
                       className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2"
                       onMouseLeave={() => setRoleMenuOpen(false)}
                     >

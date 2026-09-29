@@ -349,7 +349,7 @@ export default function CaregiverPortalPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Lowongan Care Request Terjadwal H-1 (Surabaya)</h2>
+              <h2 className="text-base font-bold text-gray-900">Lowongan Care Request Terjadwal H-1/ min 5 jam</h2>
               <p className="text-xs text-gray-500">Lamar lowongan sesuai target asuhan dan area terdekat Anda.</p>
             </div>
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">

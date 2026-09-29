@@ -57,7 +57,7 @@ export default function CustomerDashboard() {
             className="px-5 py-3.5 rounded-xl font-bold text-xs bg-amber-400 hover:bg-amber-300 text-gray-950 shadow-md text-center flex items-center justify-center gap-1.5 transition-all"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Pesan Care Baru (H-1)</span>
+            <span>Pesan Care Baru</span>
           </Link>
         </div>
       </div>

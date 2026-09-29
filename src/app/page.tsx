@@ -61,7 +61,7 @@ export default function HomePage() {
               <div className="p-3.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 flex items-start gap-3 text-xs text-emerald-100 max-w-xl">
                 <Clock className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-white">Aturan Booking Wajib H-1 (Minimal 24 Jam):</span>{' '}
+                  <span className="font-bold text-white">Aturan Booking Wajib H-1 (Minimal 5 Jam):</span>{' '}
                   Memberi waktu untuk verifikasi ketat kandidat, persiapan care plan khusus, dan kesiapan fasilitas mitra di Surabaya.
                 </div>
               </div>
@@ -81,7 +81,7 @@ export default function HomePage() {
                   className="px-5 py-3.5 rounded-xl font-bold text-sm bg-white text-emerald-950 hover:bg-emerald-50 shadow-md transition-all flex items-center gap-2"
                 >
                   <Users className="w-4 h-4 text-emerald-600" />
-                  <span>Daftar Jadi Talent (Oprec)</span>
+                  <span>Daftar Jadi Talent </span>
                 </Link>
 
                 <Link
@@ -263,6 +263,28 @@ export default function HomePage() {
             </Link>
           </div>
 
+          {/* Kebijakan Transparansi Harga: Di Rumah vs Tempat Fasilitas & Admin MVP 10% */}
+          <div className="mt-4 p-4 rounded-2xl bg-white/95 backdrop-blur-xs border border-emerald-200/90 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-900">
+                  Skema Tarif Transparan: Layanan di Rumah Lebih Hemat & Bebas Biaya Tempat
+                </h4>
+                <p className="text-gray-500 text-[11px] mt-0.5">
+                  Pilih <strong>Home Visit (di rumah)</strong> untuk biaya lebih murah (+Rp 0 tanpa biaya gedung). Pilihan <strong>Tempat Fasilitas Mitra</strong> dikenakan tambahan operasional 20%, dan <strong>Biaya Admin MVP 10%</strong> untuk proteksi garansi rekening bersama (Escrow).
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/customer/booking"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors whitespace-nowrap self-end md:self-auto"
+            >
+              Simulasi Biaya Pemesanan →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -423,7 +445,7 @@ export default function HomePage() {
               </div>
               <h3 className="font-bold text-sm text-gray-900">Booking H-1 & Min. 5 Jam</h3>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Pemesanan wajib minimal 24 jam sebelum mulai dengan durasi minimal 5 jam demi persiapan care plan optimal.
+                Pemesanan wajib minimal 5jam sebelum mulai dengan durasi minimal 5 jam demi persiapan care plan optimal.
               </p>
             </div>
 

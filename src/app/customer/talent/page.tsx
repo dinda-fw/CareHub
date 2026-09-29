@@ -52,7 +52,7 @@ export default function TalentDirectoryPage() {
                 Buka Lowongan Mitra Talent / Pengasuh CareNest
               </h3>
               <span className="px-2 py-0.2 text-[10px] font-extrabold bg-amber-400 text-gray-950 rounded-full">
-                Oprec Terbuka
+                Open Recruitment Terbuka
               </span>
             </div>
             <p className="text-xs text-gray-600 mt-1 max-w-2xl">

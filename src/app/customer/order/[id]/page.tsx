@@ -118,11 +118,14 @@ export default function OrderTrackingPage() {
   // Calculate estimated total based on a bid's proposed rate
   const calculateBidTotal = (proposedRate: number) => {
     const baseSubtotal = proposedRate * order.duration_hours * order.days_count;
+    const isFacility = order.fulfillment_type === 'partner_facility';
+    const facilityFee = isFacility ? Math.round(baseSubtotal * 0.20) : 0;
+    const subtotalBeforeDiscount = baseSubtotal + facilityFee;
     let discountRate = 0;
     if (order.package_type === 'weekly') discountRate = 0.05;
     if (order.package_type === 'monthly') discountRate = 0.15;
-    const discountAmount = Math.round(baseSubtotal * discountRate);
-    const afterDiscount = baseSubtotal - discountAmount;
+    const discountAmount = Math.round(subtotalBeforeDiscount * discountRate);
+    const afterDiscount = subtotalBeforeDiscount - discountAmount;
     const platformFee = Math.round(afterDiscount * 0.10);
     return afterDiscount + platformFee;
   };
@@ -673,12 +676,28 @@ export default function OrderTrackingPage() {
 
           {/* Payment & Escrow Card */}
           <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-3">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">Detail Pembayaran & Escrow</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400">Detail Pembayaran & Escrow</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                {order.fulfillment_type === 'home_visit' ? '🏠 Di Rumah (Hemat)' : '🏢 Tempat Fasilitas (+20%)'}
+              </span>
+            </div>
             <div className="text-xs space-y-2">
               <div className="flex justify-between text-gray-600">
-                <span>Tarif Layanan:</span>
+                <span>Tarif Layanan Dasar:</span>
                 <span>Rp {order.base_price.toLocaleString('id-ID')}</span>
               </div>
+              {order.fulfillment_type === 'partner_facility' ? (
+                <div className="flex justify-between text-purple-700 font-medium">
+                  <span>Biaya Tempat Fasilitas Mitra (+20%):</span>
+                  <span>+ Rp {(order.facility_fee ?? Math.round(order.base_price * 0.20)).toLocaleString('id-ID')}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between text-emerald-700 font-medium">
+                  <span>Layanan di Rumah:</span>
+                  <span className="font-bold">Rp 0 (Lebih Murah)</span>
+                </div>
+              )}
               {order.discount_amount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>Diskon Paket:</span>
@@ -686,12 +705,12 @@ export default function OrderTrackingPage() {
                 </div>
               )}
               <div className="flex justify-between text-gray-600">
-                <span>Biaya Layanan (10%):</span>
+                <span>Biaya Admin MVP / Jasa Platform (10%):</span>
                 <span>Rp {order.platform_fee.toLocaleString('id-ID')}</span>
               </div>
               <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-sm text-gray-900">
                 <span>Total Escrow:</span>
-                <span className="text-emerald-700">Rp {order.total_amount.toLocaleString('id-ID')}</span>
+                <span className="text-emerald-700 font-extrabold">Rp {order.total_amount.toLocaleString('id-ID')}</span>
               </div>
             </div>
 

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Baby, Heart, PawPrint, Home, Building2, Calendar, Clock, 
-  MapPin, ShieldCheck, Sparkles, Plus, Trash2, CheckCircle2, 
+import {
+  Baby, Heart, PawPrint, Home, Building2, Calendar, Clock,
+  MapPin, ShieldCheck, Sparkles, Plus, Trash2, CheckCircle2,
   AlertTriangle, ArrowRight, ArrowLeft, Camera, Check,
   LocateFixed, Navigation, User, FileText, CheckCircle, Lock, X, ShieldAlert
 } from 'lucide-react';
@@ -17,9 +17,9 @@ import { PaymentModal } from '@/components/PaymentModal';
 function BookingWizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { 
-    currentUser, recipients, facilities, caregivers, createBooking, 
-    loginAs, isLoggedIn, registerCustomer, loginCustomerDirect 
+  const {
+    currentUser, recipients, facilities, caregivers, createBooking,
+    loginAs, isLoggedIn, registerCustomer, loginCustomerDirect
   } = useCareNest();
 
   // URL query params pre-fill
@@ -72,10 +72,10 @@ function BookingWizardContent() {
 
   // LOCATION & GPS STATE (All Indonesian Cities + Real-Time Device GPS)
   const [city, setCity] = useState<string>('Kota Surabaya');
-  const [district, setDistrict] = useState<string>(currentUser?.district || 'Kecamatan Gubeng');
-  const [address, setAddress] = useState<string>(currentUser?.address || 'Jl. Raya Gubeng No. 45');
+  const [district, setDistrict] = useState<string>(currentUser?.district || 'Kecamatan Wonocolo');
+  const [address, setAddress] = useState<string>(currentUser?.address || 'Jl. Raya sidosermo No. 45');
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; accuracy?: number } | null>(
-    currentUser?.latitude && currentUser?.longitude 
+    currentUser?.latitude && currentUser?.longitude
       ? { lat: currentUser.latitude, lng: currentUser.longitude, accuracy: 10 }
       : { lat: -7.2575, lng: 112.7521, accuracy: 12 }
   );
@@ -239,9 +239,15 @@ function BookingWizardContent() {
   }
 
   const baseSubtotal = ratePerHour * durationHours * daysCount;
-  const discountAmount = Math.round(baseSubtotal * discountRate);
-  const priceAfterDiscount = baseSubtotal - discountAmount;
-  const platformFee = Math.round(priceAfterDiscount * 0.10); // 10% CareNest fee
+  const isFacility = fulfillment === 'partner_facility';
+  // Biaya tambahan tempat fasilitas: 20% jika memilih mitra fasilitas, jika di rumah lebih murah (Rp 0)
+  const facilityFee = isFacility ? Math.round(baseSubtotal * 0.20) : 0;
+  const subtotalBeforeDiscount = baseSubtotal + facilityFee;
+
+  const discountAmount = Math.round(subtotalBeforeDiscount * discountRate);
+  const priceAfterDiscount = subtotalBeforeDiscount - discountAmount;
+  // Biaya admin MVP / penggunaan jasa platform: 10%
+  const platformFee = Math.round(priceAfterDiscount * 0.10);
   const totalAmount = priceAfterDiscount + platformFee;
 
   // Validate H-1 lead time before proceeding
@@ -428,7 +434,7 @@ function BookingWizardContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
+
       {/* Header Wizard */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
@@ -467,7 +473,7 @@ function BookingWizardContent() {
       {/* STEP 1: KEBUTUHAN, DATA PENERIMA ASUHAN (CUSTOMER ISI SENDIRI) & LOKASI GPS SELURUH INDONESIA */}
       {currentStep === 1 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6 animate-in fade-in">
-          
+
           {step1Error && (
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2.5 text-xs text-red-700">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
@@ -508,35 +514,65 @@ function BookingWizardContent() {
 
           {/* Fulfillment mode: Home Visit vs Partner Facility */}
           <div className="pt-2">
-            <h3 className="text-xs font-bold text-gray-700 mb-2">Pilih Jalur Pemenuhan:</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold text-gray-700">Pilih Tempat / Lokasi Layanan:</h3>
+              <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Pilih di Rumah Lebih Hemat
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setFulfillment('home_visit')}
-                className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all ${fulfillment === 'home_visit' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/50' : 'border-gray-200 hover:bg-gray-50'}`}
+                className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all relative ${fulfillment === 'home_visit' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/50 shadow-xs' : 'border-gray-200 hover:bg-gray-50'}`}
               >
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <Home className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-gray-900">Home Visit (Datang ke Rumah)</h4>
-                  <p className="text-xs text-gray-500 mt-0.5">Pengasuh terverifikasi KTP & SKCK hadir langsung ke lokasi Anda sesuai koordinat GPS.</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                    <h4 className="font-bold text-sm text-gray-900">Home Visit (Di Rumah)</h4>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-emerald-600 text-white rounded-full">
+                      LEBIH MURAH (HEMAT)
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Pengasuh terverifikasi hadir langsung ke rumah Anda. Tarif lebih terjangkau tanpa biaya operasional gedung fasilitas (Hemat 20%).
+                  </p>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFulfillment('partner_facility')}
-                className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all ${fulfillment === 'partner_facility' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/50' : 'border-gray-200 hover:bg-gray-50'}`}
+                className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all relative ${fulfillment === 'partner_facility' ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40 shadow-xs' : 'border-gray-200 hover:bg-gray-50'}`}
               >
                 <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
                   <Building2 className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-gray-900">Titip di Mitra (Daycare / Klinik)</h4>
-                  <p className="text-xs text-gray-500 mt-0.5">Penerima asuhan dititipkan di fasilitas resmi mitra CareNest berizin lengkap.</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                    <h4 className="font-bold text-sm text-gray-900">Tempat Fasilitas Mitra</h4>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-purple-600 text-white rounded-full">
+                      +20% BIAYA FASILITAS
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Penerima asuhan dititipkan di daycare/klinik berizin resmi. Dikenakan biaya tambahan 20% untuk sarana prasarana, ruang AC & utilitas.
+                  </p>
                 </div>
               </button>
+            </div>
+
+            {/* Kebijakan Harga Banner */}
+            <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-purple-50 border border-emerald-200/80 text-[11px] text-gray-700 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-bold text-emerald-950 block">Kebijakan Pemilihan Lokasi & Biaya:</span>
+                <p className="text-gray-600 leading-relaxed">
+                  Layanan <strong>di rumah lebih murah</strong> karena tanpa biaya sewa tempat (bebas surcharge 0%). Pemilihan <strong>Tempat Fasilitas</strong> dikenakan biaya tambahan <strong>20%</strong> untuk operasional & utilitas sarana mitra, serta <strong>Biaya Admin MVP 10%</strong> untuk proteksi garansi Escrow 100%.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -632,8 +668,8 @@ function BookingWizardContent() {
                   category === 'elderly'
                     ? 'Tuliskan kebutuhan lansia: misal pasca stroke, jalan harus dibantu tongkat, kontrol jadwal obat tensi pukul 13:00, diet rendah garam...'
                     : category === 'child'
-                    ? 'Tuliskan kebutuhan anak: misal alergi susu sapi, waktu tidur siang pukul 12:30, kebiasaan sebelum tidur, mainan yang disukai...'
-                    : 'Tuliskan kebutuhan hewan: porsi pakan wet food, jadwal dog walking dengan leash di taman, obat/vitamin yang harus diberikan...'
+                      ? 'Tuliskan kebutuhan anak: misal alergi susu sapi, waktu tidur siang pukul 12:30, kebiasaan sebelum tidur, mainan yang disukai...'
+                      : 'Tuliskan kebutuhan hewan: porsi pakan wet food, jadwal dog walking dengan leash di taman, obat/vitamin yang harus diberikan...'
                 }
                 className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white leading-relaxed"
               />
@@ -851,7 +887,7 @@ function BookingWizardContent() {
           <div className="pt-4 border-t border-gray-100">
             <label className="block text-xs font-bold text-gray-700 mb-2">Pilih Paket Durasi Hemat:</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              
+
               <button
                 type="button"
                 onClick={() => setPackageType('daily')}
@@ -954,6 +990,46 @@ function BookingWizardContent() {
               </div>
             </div>
           )}
+
+          {/* Live Price Estimation Preview */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-white border border-emerald-200 text-xs space-y-2.5">
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-100">
+              <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>Estimasi Biaya Sementara (Live Preview):</span>
+              </span>
+              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                {packageType === 'weekly' ? 'Paket Mingguan (Diskon 5%)' : packageType === 'monthly' ? 'Paket Bulanan (Diskon 15%)' : 'Paket Harian (Reguler)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700">
+              <div className="flex justify-between items-center bg-white/80 p-2.5 rounded-xl border border-emerald-100/70">
+                <span className="text-gray-600">Tarif Dasar ({durationHours} jam × {daysCount} hari):</span>
+                <span className="font-semibold text-gray-900">Rp {baseSubtotal.toLocaleString('id-ID')}</span>
+              </div>
+
+              <div className={`flex justify-between items-center p-2.5 rounded-xl border ${fulfillment === 'home_visit' ? 'bg-emerald-100/50 border-emerald-200 text-emerald-950' : 'bg-purple-50 border-purple-200 text-purple-950'}`}>
+                <div>
+                  <span className="font-medium">{fulfillment === 'home_visit' ? 'Di Rumah (Home Visit):' : 'Tempat Fasilitas Mitra:'}</span>
+                  <span className="text-[10px] text-gray-500 block">{fulfillment === 'home_visit' ? 'Lebih Murah (Bebas Biaya)' : 'Biaya Sarana & Operasional'}</span>
+                </div>
+                <span className="font-bold">
+                  {fulfillment === 'home_visit' ? 'Rp 0 (Hemat)' : `+ Rp ${facilityFee.toLocaleString('id-ID')} (+20%)`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center text-gray-600 pt-1 text-[11px] px-1">
+              <span>Biaya Admin MVP / Penggunaan Jasa Platform (10%):</span>
+              <span className="font-semibold text-gray-900">+ Rp {platformFee.toLocaleString('id-ID')}</span>
+            </div>
+
+            <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-sm font-bold text-emerald-950 px-1">
+              <span>Estimasi Total Rancangan:</span>
+              <span className="text-base text-emerald-700 font-extrabold">Rp {totalAmount.toLocaleString('id-ID')}</span>
+            </div>
+          </div>
 
           {/* Nav buttons */}
           <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
@@ -1139,29 +1215,102 @@ function BookingWizardContent() {
           </div>
 
           {/* Pricing Breakdown (Shopee / Gojek Style Calculator) */}
-          <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-2.5 text-xs">
-            <h4 className="font-bold text-emerald-950 text-sm">Rincian Pembayaran Terstruktur:</h4>
-            
-            <div className="flex justify-between text-gray-600">
-              <span>Tarif Dasar ({ratePerHour.toLocaleString('id-ID')}/jam x {durationHours} jam x {daysCount} hari)</span>
-              <span>Rp {baseSubtotal.toLocaleString('id-ID')}</span>
+          <div className="p-5 sm:p-6 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-white space-y-3.5 text-xs shadow-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-200/80">
+              <h4 className="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>Rincian Pembayaran Terstruktur:</span>
+              </h4>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Transparan & Proteksi Escrow 100%
+              </span>
             </div>
 
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-700 font-semibold">
-                <span>Diskon Paket {packageType === 'weekly' ? 'Mingguan (5%)' : 'Bulanan (15%)'}</span>
-                <span>- Rp {discountAmount.toLocaleString('id-ID')}</span>
+            {/* 1. Tarif Dasar Layanan */}
+            <div className="flex justify-between items-center text-gray-700">
+              <div>
+                <span className="font-semibold text-gray-900">Tarif Dasar Layanan</span>
+                <span className="text-[11px] text-gray-500 block">
+                  Rp {ratePerHour.toLocaleString('id-ID')}/jam × {durationHours} jam × {daysCount} hari
+                </span>
+              </div>
+              <span className="font-bold text-gray-900 text-sm">Rp {baseSubtotal.toLocaleString('id-ID')}</span>
+            </div>
+
+            {/* 2. Biaya Lokasi / Tempat (Di Rumah Hemat vs Tempat Fasilitas +20%) */}
+            {fulfillment === 'home_visit' ? (
+              <div className="p-3 rounded-xl bg-emerald-100/70 border border-emerald-300 flex justify-between items-center text-emerald-950">
+                <div className="pr-2">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                    <Home className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>Layanan Datang ke Rumah (Home Visit)</span>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-emerald-700 text-white rounded font-extrabold">LEBIH HEMAT</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-800 block mt-0.5">
+                    Biaya lebih murah tanpa biaya tempat / sewa gedung fasilitas (Hemat 20%)
+                  </span>
+                </div>
+                <span className="font-extrabold text-xs text-emerald-700 whitespace-nowrap">Rp 0 (Bebas Biaya)</span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 flex justify-between items-center text-purple-950">
+                <div className="pr-2">
+                  <div className="flex items-center gap-1.5 font-bold text-purple-900">
+                    <Building2 className="w-4 h-4 text-purple-700 shrink-0" />
+                    <span>Biaya Tambahan Tempat Fasilitas Mitra (+20%)</span>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-purple-700 text-white rounded font-extrabold">+20%</span>
+                  </div>
+                  <span className="text-[10px] text-purple-800 block mt-0.5">
+                    Mencakup penggunaan ruang ber-AC, pengawasan CCTV, sarana & utilitas mitra resmi berizin
+                  </span>
+                </div>
+                <span className="font-extrabold text-xs text-purple-700 whitespace-nowrap">+ Rp {facilityFee.toLocaleString('id-ID')}</span>
               </div>
             )}
 
-            <div className="flex justify-between text-gray-600">
-              <span>Platform Service Fee CareNest (10%)</span>
-              <span>Rp {platformFee.toLocaleString('id-ID')}</span>
+            {/* Subtotal Layanan */}
+            <div className="flex justify-between items-center text-gray-600 pt-1 text-[11px] px-1">
+              <span>Subtotal Layanan {fulfillment === 'partner_facility' ? '(Dasar + Fasilitas 20%)' : '(Dasar di Rumah)'}</span>
+              <span className="font-semibold text-gray-800">Rp {subtotalBeforeDiscount.toLocaleString('id-ID')}</span>
             </div>
 
-            <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-base font-bold text-emerald-900">
-              <span>Total Rancangan Biaya (Nomine):</span>
-              <span className="text-lg text-emerald-700">Rp {totalAmount.toLocaleString('id-ID')}</span>
+            {/* 3. Diskon Paket jika ada */}
+            {discountAmount > 0 && (
+              <div className="flex justify-between items-center text-emerald-700 font-semibold bg-emerald-100/50 px-2.5 py-2 rounded-xl border border-emerald-200">
+                <div>
+                  <span className="font-bold">Diskon Paket {packageType === 'weekly' ? 'Mingguan (5%)' : 'Bulanan (15%)'}</span>
+                  <span className="text-[10px] text-emerald-600 block">Potongan langsung bundling hari</span>
+                </div>
+                <span className="font-bold text-xs">- Rp {discountAmount.toLocaleString('id-ID')}</span>
+              </div>
+            )}
+
+            {/* 4. Biaya Admin MVP / Penggunaan Jasa Platform (10%) */}
+            <div className="flex justify-between items-center text-gray-700 pt-2 border-t border-emerald-100">
+              <div>
+                <span className="font-semibold text-gray-900">Biaya Admin MVP / Penggunaan Jasa Platform (10%)</span>
+                <span className="text-[10px] text-gray-500 block">
+                  Pemeliharaan sistem proteksi Escrow 100%, verifikasi KTP/SKCK & pelacakan GPS live
+                </span>
+              </div>
+              <span className="font-bold text-gray-900 whitespace-nowrap text-xs">+ Rp {platformFee.toLocaleString('id-ID')}</span>
+            </div>
+
+            {/* 5. Total Pembayaran / Total Rancangan Biaya */}
+            <div className="pt-3 border-t-2 border-emerald-300 flex justify-between items-center text-base font-bold text-emerald-950">
+              <div>
+                <span className="block text-xs uppercase tracking-wider text-emerald-800 font-extrabold">Total Rancangan Biaya (Nomine):</span>
+                <span className="text-[10px] font-normal text-gray-500">Nominal yang akan di-hold aman di Escrow saat deal</span>
+              </div>
+              <span className="text-xl font-extrabold text-emerald-700">Rp {totalAmount.toLocaleString('id-ID')}</span>
+            </div>
+
+            {/* Transparency Note */}
+            <div className="p-3 rounded-xl bg-white border border-emerald-200 text-[11px] text-gray-600 space-y-1 mt-2">
+              <span className="font-bold text-emerald-900 block">💡 Transparansi Struktur Biaya CareHub:</span>
+              <p>• <strong>Layanan di Rumah:</strong> Lebih hemat karena tidak ada biaya operasional sewa gedung (+Rp 0).</p>
+              <p>• <strong>Tempat Fasilitas Mitra:</strong> Dikenakan biaya tambahan <strong>20%</strong> untuk menjamin ketersediaan ruang, utilitas, dan sarana berizin.</p>
+              <p>• <strong>Biaya Admin MVP Platform:</strong> Dikenakan <strong>10%</strong> untuk menjamin keamanan dana di rekening bersama (Escrow) dan verifikasi identitas resmi.</p>
             </div>
 
             {/* Step-by-step workflow callout */}
@@ -1305,11 +1454,19 @@ function BookingWizardContent() {
 
             {/* Nominasi Biaya Info */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/70 to-teal-50/70 border border-emerald-200 space-y-2 text-xs">
-              <div className="flex justify-between items-center text-gray-600">
-                <span>Rancangan Biaya (Nomine):</span>
+              <div className="flex justify-between items-center text-gray-700">
+                <span className="font-medium">Rancangan Biaya (Nomine):</span>
                 <span className="font-extrabold text-sm text-emerald-900">Rp {totalAmount.toLocaleString('id-ID')}</span>
               </div>
-              <p className="text-[11px] text-emerald-800 leading-relaxed">
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-emerald-100 text-[10px]">
+                <span className={`px-2 py-0.5 rounded-full font-bold ${fulfillment === 'home_visit' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}`}>
+                  {fulfillment === 'home_visit' ? '🏠 Home Visit (Lebih Murah • Hemat)' : '🏢 Tempat Fasilitas (+20%)'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full font-bold bg-gray-100 text-gray-700">
+                  Admin Platform MVP: 10%
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed pt-1">
                 💡 <strong>Belum Ada Pembayaran yang Ditagihkan!</strong> Anda baru melakukan pembayaran (di-HOLD di Escrow CareHub) setelah Anda menyeleksi profil, latar belakang & deal dengan pengasuh pilihan Anda.
               </p>
             </div>
@@ -1340,7 +1497,7 @@ function BookingWizardContent() {
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-100 animate-in zoom-in-95 my-8">
-            
+
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 text-white p-5 relative">
               <button
@@ -1392,7 +1549,7 @@ function BookingWizardContent() {
 
             {/* Modal Body */}
             <div className="p-6 space-y-4">
-              
+
               {/* TAB REGISTER */}
               {authMode === 'register' && (
                 <form onSubmit={handleAuthModalRegister} className="space-y-3.5 text-xs">

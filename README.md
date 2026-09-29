@@ -100,7 +100,7 @@ File SQL skema database dan seed data lengkap telah disediakan:
 
 ## 🧭 Alur Skenario Demo Cepat
 
-1. **Uji Aturan H-1 & Booking**:
+1. **Uji Aturan H-1/min 5 jam & Booking**:
    - Buka `/customer/booking`. Coba pilih tanggal hari ini (akan ditolak sistem sesuai PRD). Pilih tanggal besok/lusa.
    - Pilih paket Mingguan (diskon 5%) atau Bulanan (diskon 15%).
    - Susun custom task lalu klik **Konfirmasi & Simpan ke Escrow**.

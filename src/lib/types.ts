@@ -144,6 +144,7 @@ export interface Order {
   latitude: number;
   longitude: number;
   base_price: number;
+  facility_fee?: number;
   discount_amount: number;
   platform_fee: number;
   total_amount: number;

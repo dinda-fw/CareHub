@@ -262,13 +262,18 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const totalServiceBase = baseRatePerHour * data.durationHours * data.daysCount;
+    const isFacility = data.fulfillmentType === 'partner_facility';
+    // Biaya tambahan tempat fasilitas 20% jika memilih fasilitas mitra, jika di rumah lebih murah (Rp 0)
+    const facilityFee = isFacility ? Math.round(totalServiceBase * 0.20) : 0;
+    const subtotalBeforeDiscount = totalServiceBase + facilityFee;
     
     let discountRate = 0;
     if (data.packageType === 'weekly') discountRate = 0.05;
     if (data.packageType === 'monthly') discountRate = 0.15;
-    const discountAmount = Math.round(totalServiceBase * discountRate);
+    const discountAmount = Math.round(subtotalBeforeDiscount * discountRate);
 
-    const priceAfterDiscount = totalServiceBase - discountAmount;
+    const priceAfterDiscount = subtotalBeforeDiscount - discountAmount;
+    // Biaya admin MVP / penggunaan jasa platform 10%
     const platformFee = Math.round(priceAfterDiscount * 0.10);
     const totalAmount = priceAfterDiscount + platformFee;
 
@@ -319,6 +324,7 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       latitude: orderLat,
       longitude: orderLng,
       base_price: totalServiceBase,
+      facility_fee: facilityFee,
       discount_amount: discountAmount,
       platform_fee: platformFee,
       total_amount: totalAmount,
@@ -561,15 +567,19 @@ export const CareNestProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Recalculate cost based on chosen caregiver's agreed proposed rate
     if (bid.proposed_rate > 0) {
       const baseSubtotal = bid.proposed_rate * order.duration_hours * order.days_count;
+      const isFacility = order.fulfillment_type === 'partner_facility';
+      const facilityFee = isFacility ? Math.round(baseSubtotal * 0.20) : 0;
+      const subtotalBeforeDiscount = baseSubtotal + facilityFee;
       let discountRate = 0;
       if (order.package_type === 'weekly') discountRate = 0.05;
       if (order.package_type === 'monthly') discountRate = 0.15;
-      const discountAmount = Math.round(baseSubtotal * discountRate);
-      const priceAfterDiscount = baseSubtotal - discountAmount;
+      const discountAmount = Math.round(subtotalBeforeDiscount * discountRate);
+      const priceAfterDiscount = subtotalBeforeDiscount - discountAmount;
       const platformFee = Math.round(priceAfterDiscount * 0.10);
       const totalAmount = priceAfterDiscount + platformFee;
 
       order.base_price = baseSubtotal;
+      order.facility_fee = facilityFee;
       order.discount_amount = discountAmount;
       order.platform_fee = platformFee;
       order.total_amount = totalAmount;

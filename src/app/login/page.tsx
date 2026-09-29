@@ -370,7 +370,7 @@ function LoginContent() {
                 }`}
               >
                 <Briefcase className="w-4 h-4" />
-                <span>Daftar Talent (Oprec Mitra Pengasuh)</span>
+                <span>Daftar Talent ( Mitra Pengasuh)</span>
               </button>
             </div>
           </div>
@@ -643,7 +643,7 @@ function LoginContent() {
                 href="/talent/register"
                 className="w-full py-3.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-gray-950 shadow-md transition-all text-center block"
               >
-                Buka Formulir Pendaftaran Talent Oprec Lengkap (Upload KTP & SKCK) →
+                Buka Formulir Pendaftaran Talent Open recruitment Lengkap (Upload KTP & SKCK) →
               </Link>
             </div>
           )}
