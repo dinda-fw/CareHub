@@ -56,7 +56,7 @@ function BookingWizardContent() {
       criteria: 'Pernah mengajar PAUD / telaten menangani balita aktif, ceria, memiliki sertifikat First Aid anak.',
     },
     pet: {
-      name: 'Milo (Golden Retriever)',
+      name: 'Milo ',
       age: '2 Tahun',
       genderOrBreed: 'Anjing Golden Retriever',
       needs: 'Pemberian pakan kering premium 250gr + air mineral bersih, jalan santai keliling komplek 20 menit dengan tali kekang, sisir bulu halus.',
